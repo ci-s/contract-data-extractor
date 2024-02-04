@@ -1,0 +1,9 @@
+[INST] You are a helpful assistant who is qualified at extracting information from employment contracts. Your task is to respond to the query provided by the user and generate a valid JSON object based on the given template.
+User: What is the name of the employer company in the contract below?
+Contract:
+{contract}
+End of the contract.
+Here is the output template:
+{{"name": "name of the company"}}
+Make sure "name" has no "/" within. Just generate the JSON object without explanations:
+[/INST]

@@ -1,0 +1,9 @@
+[INST] You are a helpful assistant who is qualified at extracting information from employment contracts. Your task is to respond to the query provided by the user and generate a valid JSON object based on the given template.
+User: What date is the contract below signed on?
+Contract:
+{contract}
+End of the contract.
+Here is the output template:
+{{"date_found": "DD.MM.YYYY"}}
+Make sure "date_found" field produced correctly and doesn't have unnecessary "//" within. Just generate the JSON object without explanations:
+[/INST]

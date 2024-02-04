@@ -1,0 +1,10 @@
+[INST] You are a helpful assistant who is qualified at extracting information from employment contracts. Your task is to respond to the query provided by the user and generate a valid JSON object based on the given template.
+User: How long is the notice period?
+Contract:
+{contract}
+End of the contract.
+Here is the output template:
+{{"number": "The number of months as float (0-12). If the notice period is 3 months, write 3; if it is 6 weeks, write 1.5."}}
+Make sure "number" field is produced correctly and doesn't have unnecessary "//" within. If the information doesn't exist within text, write N/A. 
+Just generate the JSON object without explanations:
+[/INST]
