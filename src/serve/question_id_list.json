@@ -1,0 +1,52 @@
+{
+    "start_date": {
+        "prompt_file": "exp4_startdate.txt",
+        "pydantic_object": "date",
+        "included": true
+    },
+    "sign_date": {
+        "prompt_file": "exp4_signdate.txt",
+        "pydantic_object": "date",
+        "included": true
+    },
+    "employer_name": {
+        "prompt_file": "exp4_employername.txt",
+        "pydantic_object": "string",
+        "included": true
+    },
+    "notice_period": {
+        "prompt_file": "exp4_notice_period.txt",
+        "pydantic_object": "float",
+        "included": "True"
+    },
+    "address_employer": {
+        "prompt_file": "exp4_address_employer.txt",
+        "pydantic_object": "string",
+        "included": "True"
+    },
+    "address_employee": {
+        "prompt_file": "exp4_address_employee.txt",
+        "pydantic_object": "string",
+        "included": "True"
+    },
+    "birth_date": {
+        "prompt_file": "exp4_birth_date.txt",
+        "pydantic_object": "date",
+        "included": "True"
+    },
+    "job_title": {
+        "prompt_file": "exp4_job_title.txt",
+        "pydantic_object": "string",
+        "included": "True"
+    },
+    "type_of_contract": {
+        "prompt_file": "exp4_type_of_contract.txt",
+        "pydantic_object": "string",
+        "included": "True"
+    },
+    "annual_gross_salary": {
+        "prompt_file": "exp4_annual_gross_salary.txt",
+        "pydantic_object": "string",
+        "included": "True"
+    }
+}
