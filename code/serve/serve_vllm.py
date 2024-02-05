@@ -32,13 +32,13 @@ from textract.TextractHelper import TextractHelper
 ############## SETUP ##############
 # Move to config file,
 model_id = "mistralai/Mistral-7B-Instruct-v0.2"
-PROMPT_FOLDER = "/home/ec2-user/project/src/prompts/"
+PROMPT_FOLDER = "../prompts/"
 PROMPT_TEMPLATE_FILE = "exp3_template_prompt.txt"
 question_id_list_file = "question_id_list.json"
 STRING_DISTANCE_THRESHOLD = 0.1  # TODO: RECONSIDER VALUE
 S3_PROFILE_NAME = "cisem.altan"
 S3_BUCKET_NAME = "cis-idp"
-data_folder = "/home/ec2-user/project/data"
+data_folder = "../../data"
 
 llm = VLLM(
     model=model_id,
@@ -60,7 +60,7 @@ pydantic_category_manager = PydanticCategoryManager(
 )
 
 filereader = FileReader(data_folder)
-textract = TextractHelper(S3_PROFILE_NAME, S3_BUCKET_NAME)
+# textract = TextractHelper(S3_PROFILE_NAME, S3_BUCKET_NAME)
 distance_evaluator = load_evaluator(
     "string_distance", distance=StringDistance.LEVENSHTEIN
 )
@@ -256,24 +256,24 @@ async def list_all_questions() -> Response:
 
 # Different than the rest of the endpoints, this one takes a list of questions as full sentences (instead of questionids)
 # and operate on files in S3
-@app.post("/v1/query_pdf")
-async def query_single_page_s3_pdf(request: Request) -> Response:
-    """
-    Queries a single page PDF document stored in an S3 bucket using Amazon Textract.
+# @app.post("/v1/query_pdf")
+# async def query_single_page_s3_pdf(request: Request) -> Response:
+#     """
+#     Queries a single page PDF document stored in an S3 bucket using Amazon Textract.
 
-    Args:
-        request (Request): The HTTP request object.
+#     Args:
+#         request (Request): The HTTP request object.
 
-    Returns:
-        Response: The HTTP response object containing the query results.
-    """
-    request_dict = await request.json()
-    filepath_in_s3 = request_dict.pop("filepath_in_s3")
-    questions = request_dict.pop("questions")
+#     Returns:
+#         Response: The HTTP response object containing the query results.
+#     """
+#     request_dict = await request.json()
+#     filepath_in_s3 = request_dict.pop("filepath_in_s3")
+#     questions = request_dict.pop("questions")
 
-    response = textract.sync_query_document(filepath_in_s3, questions)
-    query_dict = textract.get_query_results(response)
-    return JSONResponse(query_dict)
+#     response = textract.sync_query_document(filepath_in_s3, questions)
+#     query_dict = textract.get_query_results(response)
+#     return JSONResponse(query_dict)
 
 
 if __name__ == "__main__":
