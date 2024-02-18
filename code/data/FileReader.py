@@ -1,11 +1,14 @@
 from langchain.document_loaders import UnstructuredFileLoader, UnstructuredImageLoader
 import pandas as pd
 from os import walk
+import os
 from PIL import Image
 import PyPDF2
 import re
 import pytesseract
 from pdf2image import convert_from_path
+import requests
+from urllib.parse import urlparse
 
 
 class FileReader:
@@ -92,7 +95,6 @@ class FileReader:
 
     def read_all_contracts(self, sub_folder_path):
 
-
         filename_list = self.get_all_filenames(sub_folder_path)
 
         contracts = {}
@@ -103,7 +105,9 @@ class FileReader:
                 if 180 in orients:
                     raise ValueError("Rotation for PDF not supported: " + filename)
                 contracts[filename] = self.read_pdf(sub_folder_path, filename)
-            elif any(filename.endswith(file_type) for file_type in self.image_file_types):
+            elif any(
+                filename.endswith(file_type) for file_type in self.image_file_types
+            ):
                 orients = self.detect_image_orientation(sub_folder_path, filename)
                 if 180 in orients:
                     print(
@@ -219,3 +223,37 @@ class FileReader:
             osd = pytesseract.image_to_osd(image)
             orients.append(int(re.search("(?<=Rotate: )\d+", osd).group(0)))
         return orients
+
+    def delete_local_file(self, filepath):
+        """
+        Deletes a local file.
+
+        Args:
+            filepath (str): The path to the file to delete.
+
+        Returns:
+            None
+        """
+        os.remove(filepath)
+
+    def read_url(self, url):
+        # Get URL
+        response = requests.get(url)
+
+        # Extract filename from URL
+        a = urlparse(url)
+        filename = os.path.basename(a.path)
+
+        # Save file
+        if not os.path.exists(self.data_path + "/tmp"):
+            os.makedirs(self.data_path + "/tmp")
+        filepath = self.data_path + "/tmp/" + filename
+        with open(filepath, "wb") as f:
+            f.write(response.content)
+        return filename
+
+    def read_contract_from_url(self, url):
+        filename = self.read_url(url)
+        contract = self.read_contract("tmp", filename)
+        self.delete_local_file(self.data_path + "/tmp/" + filename)
+        return contract
