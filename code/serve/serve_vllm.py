@@ -47,6 +47,7 @@ llm = VLLM(
     top_k=10,
     top_p=0.95,
     temperature=0.1,
+    vllm_kwargs={"max_model_len": 16000},
 )
 
 question_id_manager = QuestionIdManager(question_id_list_file)
