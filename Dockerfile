@@ -1,4 +1,5 @@
-FROM vllm/vllm-openai:latest
+FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
+# vllm/vllm-openai:latest
 # nvidia/cuda:12.3.1-runtime-ubuntu22.04 # works
 # nvcr.io/nvidia/pytorch:24.01-py3
 # amazonlinux:latest
@@ -31,13 +32,14 @@ RUN echo "source /miniconda/etc/profile.d/conda.sh" >> ~/.bashrc
 # SHELL ["/bin/bash", "-c"]
 # RUN conda activate docker_env2
 
-
+COPY .aws/ /root/.aws
 COPY data/ /data
 COPY code/ /code
 WORKDIR /code/serve
 # CMD [ "python", "serve_vllm.py"]
-RUN conda run -n docker_env2 python serve_vllm.py
-# Starthere: thros error bc of no gpu. but gpu goes in with docker run command. do i need to do it elsewhere?
 EXPOSE 5001
+CMD ["conda", "run", "-n", "docker_env2", "python", "serve_vllm.py"]
+#RUN conda run -n docker_env2 python serve_vllm.py
+# Starthere: thros error bc of no gpu. but gpu goes in with docker run command. do i need to do it elsewhere?
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
 # Continue with your Dockerfile...

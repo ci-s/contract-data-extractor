@@ -61,7 +61,7 @@ pydantic_category_manager = PydanticCategoryManager(
 )
 
 filereader = FileReader(data_folder)
-# textract = TextractHelper(S3_PROFILE_NAME, S3_BUCKET_NAME)
+textract = TextractHelper(S3_PROFILE_NAME, S3_BUCKET_NAME)
 distance_evaluator = load_evaluator(
     "string_distance", distance=StringDistance.LEVENSHTEIN
 )
@@ -257,24 +257,24 @@ async def list_all_questions() -> Response:
 
 # Different than the rest of the endpoints, this one takes a list of questions as full sentences (instead of questionids)
 # and operate on files in S3
-# @app.post("/v1/query_pdf")
-# async def query_single_page_s3_pdf(request: Request) -> Response:
-#     """
-#     Queries a single page PDF document stored in an S3 bucket using Amazon Textract.
+@app.post("/v1/query_pdf")
+async def query_single_page_s3_pdf(request: Request) -> Response:
+    """
+    Queries a single page PDF document stored in an S3 bucket using Amazon Textract.
 
-#     Args:
-#         request (Request): The HTTP request object.
+    Args:
+        request (Request): The HTTP request object.
 
-#     Returns:
-#         Response: The HTTP response object containing the query results.
-#     """
-#     request_dict = await request.json()
-#     filepath_in_s3 = request_dict.pop("filepath_in_s3")
-#     questions = request_dict.pop("questions")
+    Returns:
+        Response: The HTTP response object containing the query results.
+    """
+    request_dict = await request.json()
+    filepath_in_s3 = request_dict.pop("filepath_in_s3")
+    questions = request_dict.pop("questions")
 
-#     response = textract.sync_query_document(filepath_in_s3, questions)
-#     query_dict = textract.get_query_results(response)
-#     return JSONResponse(query_dict)
+    response = textract.sync_query_document(filepath_in_s3, questions)
+    query_dict = textract.get_query_results(response)
+    return JSONResponse(query_dict)
 
 
 if __name__ == "__main__":
