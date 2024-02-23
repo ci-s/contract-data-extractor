@@ -2,6 +2,7 @@ import os
 import json
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
+import requests
 from post_operations.parsing import (
     parse_output,
 )
@@ -275,3 +276,25 @@ def execute_prompt_and_parse(llm, prompt, contract, parser):
     print("*" * 20)
     # Parse
     return parse_output(outputs, parser)
+
+
+class WebhookManager:
+    def __init__(self, url):
+        self.url = url
+        self.check_webhook_url()
+
+    def check_webhook_url(self):
+        try:
+            response = requests.get(self.url)
+            if response.status_code == 200:
+                print("Webhook URL is valid.")
+                return True
+        except requests.exceptions.RequestException:
+            raise ValueError("Webhook URL is not valid.")
+
+    def send_results(self, data):
+        if not isinstance(data, dict):
+            raise ValueError("Data must be a dictionary.")
+
+        response = requests.post(self.url, json=data)
+        return response

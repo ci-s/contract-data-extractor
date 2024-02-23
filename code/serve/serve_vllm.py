@@ -21,6 +21,7 @@ from data.FileReader import FileReader
 from utils import (
     QuestionIdManager,
     PydanticCategoryManager,
+    WebhookManager,
     include_new_question,
     execute_prompt_and_parse,
     process_single_question,
@@ -60,10 +61,13 @@ pydantic_category_manager = PydanticCategoryManager(
     }
 )
 
-filereader = FileReader(data_folder)
+filereader = FileReader()
 textract = TextractHelper(S3_PROFILE_NAME, S3_BUCKET_NAME)
 distance_evaluator = load_evaluator(
     "string_distance", distance=StringDistance.LEVENSHTEIN
+)
+webhook_manager = WebhookManager(
+    url="https://webhook.site/c14b751e-3823-48ea-b30b-77c840760188"
 )
 
 app = FastAPI()
@@ -75,24 +79,14 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/v1/generate_text")
-async def generate_text(request: Request) -> Response:
-    request_dict = await request.json()
-    prompt = request_dict.pop("prompt")
-    output = llm(prompt)
-
-    return output  # JSONResponse(output)
-
-
 @app.post("/v1/ask_single_question")
 async def ask_single_question(request: Request) -> Response:
     request_dict = await request.json()
     # Read contract
-    sub_folder_path = request_dict.pop("sub_folder_path")
-    filename = request_dict.pop("filename")
+    file_url = request_dict.pop("file_url")
     questionid = request_dict.pop("questionid")
 
-    contract = filereader.read_contract(sub_folder_path, filename)
+    contract = filereader.read_contract_from_url(file_url)
     return process_single_question(
         llm,
         contract,
@@ -111,17 +105,16 @@ async def process_contract(request: Request) -> Response:
     request_dict = await request.json()
 
     # Read contract
-    sub_folder_path = request_dict.pop("sub_folder_path")
-    filename = request_dict.pop("filename")
+    file_url = request_dict.pop("file_url")
 
-    contract = filereader.read_contract(sub_folder_path, filename)
-    print("Contract name: ", filename)
+    contract = filereader.read_contract_from_url(file_url)
+
     # Create output dictionary
     parsed_output = {}
     for questionid in question_id_manager.get_all_questionids():
         if not question_id_manager.get_questionid(questionid)["included"]:
             continue
-        parsed_output[questionid] = []
+        # parsed_output[questionid] = []
         print("*" * 20)
         print("Questionid: ", questionid)
 
@@ -134,12 +127,13 @@ async def process_contract(request: Request) -> Response:
             PROMPT_FOLDER,
         )
 
-        parsed_output[questionid].append(outputs)
+        parsed_output[questionid] = outputs
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Time taken for processContract: {elapsed_time} seconds")
     print("Done!")
+    webhook_manager.send_results(parsed_output)
     return JSONResponse(parsed_output)
 
 
@@ -152,8 +146,7 @@ async def add_question(request: Request) -> Response:
     pydantic_category = request_dict.pop("pydantic_category")
     expected_format = request_dict.pop("expected_format")
 
-    sub_folder_path = request_dict.pop("sub_folder_path", None)
-    filenames = request_dict.pop("filenames", None)  # should be a list
+    file_urls = request_dict.pop("file_urls", None)  # should be a list
     tolerated_difference_in_number_output = request_dict.pop(
         "tolerated_difference_in_number_output", 0
     )
@@ -180,14 +173,14 @@ async def add_question(request: Request) -> Response:
         expected_format=expected_format,
     )
 
-    if sub_folder_path is not None and filenames is not None:
+    if file_urls is not None:
         # Run evaluation
         evaluation = []
-        for i, filename in enumerate(filenames):
-            contract = filereader.read_contract(sub_folder_path, filename)
+        for i, file_url in enumerate(file_urls):
+            contract = filereader.read_contract_from_url(file_url)
 
             output = execute_prompt_and_parse(llm, prompt, contract, parser)
-            print("Filename: ", filename, "\nExtracted entity: ", output)
+            print("File URL: ", file_url, "\nExtracted entity: ", output)
 
             if ground_truth is not None:
                 print("Ground truth: ", ground_truth[i])
@@ -222,7 +215,7 @@ async def add_question(request: Request) -> Response:
             )
             print(
                 "Evaluation details: ",
-                [f"{filenames[i]}: {ev}" for i, ev in enumerate(evaluation)],
+                [f"{file_urls[i]}: {ev}" for i, ev in enumerate(evaluation)],
             )
     # Decide to include question or not
     include_question = input("Include question? (y/n): ")
@@ -257,7 +250,7 @@ async def list_all_questions() -> Response:
 
 # Different than the rest of the endpoints, this one takes a list of questions as full sentences (instead of questionids)
 # and operate on files in S3
-@app.post("/v1/query_pdf")
+@app.post("/v1/query_salary_slip")
 async def query_single_page_s3_pdf(request: Request) -> Response:
     """
     Queries a single page PDF document stored in an S3 bucket using Amazon Textract.
@@ -269,11 +262,20 @@ async def query_single_page_s3_pdf(request: Request) -> Response:
         Response: The HTTP response object containing the query results.
     """
     request_dict = await request.json()
-    filepath_in_s3 = request_dict.pop("filepath_in_s3")
+    file_url = request_dict.pop("file_url")
     questions = request_dict.pop("questions")
 
-    response = textract.sync_query_document(filepath_in_s3, questions)
+    # read from url
+    temp_file_path = filereader.read_url(file_url)
+    # write s3
+    filename_in_s3 = textract.upload_file_to_s3(temp_file_path)
+
+    response = textract.sync_query_document(filename_in_s3, questions)
     query_dict = textract.get_query_results(response)
+
+    # clean
+    textract.delete_s3_file(filename_in_s3)
+    filereader.delete_local_file(temp_file_path)
     return JSONResponse(query_dict)
 
 
