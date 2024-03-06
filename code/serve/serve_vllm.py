@@ -31,12 +31,11 @@ from eval.evaluation import evaluate_string_similarity, evaluate_number_similari
 from textract.TextractHelper import TextractHelper
 
 ############## SETUP ##############
-# Move to config file,
 model_id = "mistralai/Mistral-7B-Instruct-v0.2"
 PROMPT_FOLDER = "../prompts/"
-PROMPT_TEMPLATE_FILE = "exp3_template_prompt.txt"
+PROMPT_TEMPLATE_FILE = "exp4_template_prompt.txt"
 question_id_list_file = "question_id_list.json"
-STRING_DISTANCE_THRESHOLD = 0.1  # TODO: RECONSIDER VALUE
+STRING_DISTANCE_THRESHOLD = 0.1  # Levenshtein distance threshold for string similarity
 S3_PROFILE_NAME = "cisem.altan"
 S3_BUCKET_NAME = "cis-idp"
 data_folder = "../../data"
@@ -48,7 +47,7 @@ llm = VLLM(
     top_k=10,
     top_p=0.95,
     temperature=0.1,
-    vllm_kwargs={"max_model_len": 16000},
+    vllm_kwargs={"max_model_len": 16000},  # need to state otw vLLM throws an error
 )
 
 question_id_manager = QuestionIdManager(question_id_list_file)
